@@ -19,6 +19,14 @@ public class BaseActivity extends AppCompatActivity implements TurbolinksAdapter
 
     private ValueCallback<Uri[]> mFilePathCallback;
     private final int REQUEST_SELECT_FILE = 1001;
+    /**
+     * request code for sign in
+     */
+    private final int REQUEST_SIGN_IN = 1002;
+    /**
+     * result code when sign in is canceled
+     */
+    protected static final int RESULT_SIGN_IN_CANCELED = 1003;
     private boolean onSelectFileCallback = false;
 
     class WebChromeClient extends android.webkit.WebChromeClient {
@@ -41,6 +49,14 @@ public class BaseActivity extends AppCompatActivity implements TurbolinksAdapter
                     mFilePathCallback.onReceiveValue(null);
                 }
                 onSelectFileCallback = true;
+                break;
+            case REQUEST_SIGN_IN:
+                /**
+                 * when sign in action is canceled, just finish self
+                 */
+                if (resultCode == RESULT_SIGN_IN_CANCELED) {
+                    finish();
+                }
                 break;
             default:
                 super.onActivityResult(requestCode, resultCode, data);
@@ -128,6 +144,22 @@ public class BaseActivity extends AppCompatActivity implements TurbolinksAdapter
             } else if (path.matches("/account/edit")) {
                 intent = new Intent(this, SettingsActivity.class);
                 intent.putExtra(INTENT_URL, location);
+            } else if (path.matches("/account/sign_in")) {
+                /**
+                 * SignIn seems to be a very special action as it can be canceled
+                 * we share same webview across several activity and
+                 * there is no way for webview to be notified when sign in is canceled
+                 *
+                 * so when we use SignInActivity, we expected it to have a result
+                 * with an result, we will get whether sign in is canceled
+                 *
+                 * @see BaseActivity#onActivityResult(int, int, Intent)
+                 */
+                intent = new Intent(this, SignInActivity.class);
+                intent.putExtra(INTENT_URL, location);
+
+                startActivityForResult(intent, REQUEST_SIGN_IN);
+                return;
             } else {
                 intent = new Intent(this, EmptyActivity.class);
                 intent.putExtra(INTENT_URL, location);
